@@ -1,0 +1,148 @@
+// Variáveis de Estilo para fácil customização
+:host {
+  --primary-bg: #e5ddd5;
+  --secondary-bg: #f0f2f5;
+  --header-bg: #00a884;
+  --user-bubble-bg: #d9fdd3;
+  --bot-bubble-bg: #ffffff;
+  --text-primary: #111b21;
+  --text-secondary: #667781;
+  --border-color: #d1d7db;
+}
+
+// Container principal do componente
+:host {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: var(--primary-bg);
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARMAAAABCAYAAAAiP3gBAAAAK0lEQVR42u3BMQEAAAgDoC25/z8t2xUL4h4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4Nn8sAAb3fVAPAAAAAElFTkSuQmCC'); // Textura sutil
+}
+
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  width: 95%;
+  max-width: 900px;
+  height: 90vh;
+  background: var(--secondary-bg);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.chat-header {
+  padding: 15px 20px;
+  background: var(--header-bg);
+  color: white;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  h1 { font-size: 1.3rem; margin: 0; }
+  p { font-size: 0.85rem; margin: 0; opacity: 0.9; }
+}
+
+.chat-messages {
+  flex-grow: 1;
+  padding: 20px 30px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.message {
+  display: flex;
+  max-width: 75%;
+  &.user-message {
+    align-self: flex-end;
+    .message-bubble { background-color: var(--user-bubble-bg); }
+  }
+  &.bot-message {
+    align-self: flex-start;
+    .message-bubble { background-color: var(--bot-bubble-bg); }
+  }
+}
+
+.message-bubble {
+  padding: 10px 15px;
+  border-radius: 12px;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+  p { margin: 0; color: var(--text-primary); white-space: pre-wrap; }
+}
+
+.chat-input {
+  padding: 15px 20px;
+  border-top: 1px solid var(--border-color);
+  background-color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+
+  form {
+    display: flex;
+    flex-grow: 1;
+    gap: 15px;
+  }
+
+  input[type="text"] {
+    flex-grow: 1;
+    padding: 12px 18px;
+    border-radius: 25px;
+    border: 1px solid var(--border-color);
+    outline: none;
+    font-size: 1rem;
+    &:focus { border-color: var(--header-bg); }
+  }
+  
+  // Botão de anexo
+  .attach-btn, .send-btn {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+  }
+  
+  .attach-btn {
+    background-color: transparent;
+    color: var(--text-secondary);
+    &:hover { background-color: var(--secondary-bg); }
+  }
+  
+  .send-btn {
+    background-color: var(--header-bg);
+    color: white;
+    &:hover { filter: brightness(1.1); }
+    &:disabled { background-color: #ccc; cursor: not-allowed; }
+  }
+}
+
+.attachment-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 10px;
+  background-color: var(--secondary-bg);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  
+  button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+}
+
+/* Animação "digitando..." (sem alterações) */
+// ... (código da animação como estava antes)
