@@ -1,148 +1,176 @@
-// Variáveis de Estilo para fácil customização
+// Variáveis de Cor
 :host {
-  --primary-bg: #e5ddd5;
-  --secondary-bg: #f0f2f5;
-  --header-bg: #00a884;
-  --user-bubble-bg: #d9fdd3;
-  --bot-bubble-bg: #ffffff;
-  --text-primary: #111b21;
-  --text-secondary: #667781;
-  --border-color: #d1d7db;
-}
-
-// Container principal do componente
-:host {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background-color: var(--primary-bg);
-  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARMAAAABCAYAAAAiP3gBAAAAK0lEQVR42u3BMQEAAAgDoC25/z8t2xUL4h4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4Nn8sAAb3fVAPAAAAAElFTkSuQmCC'); // Textura sutil
+  --primary-color: #5a67d8;
+  --secondary-color: #edf2f7;
+  --user-message-bg: var(--primary-color);
+  --bot-message-bg: #e2e8f0;
+  --text-color-light: #ffffff;
+  --text-color-dark: #2d3748;
+  --container-bg: #ffffff;
+  --header-bg: #f7fafc;
+  --input-bg: #edf2f7;
+  --border-color: #e2e8f0;
 }
 
 .chat-container {
   display: flex;
   flex-direction: column;
-  width: 95%;
-  max-width: 900px;
-  height: 90vh;
-  background: var(--secondary-bg);
-  border-radius: 8px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  height: 100vh;
+  max-width: 768px;
+  margin: auto;
+  background-color: var(--container-bg);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border-radius: 0.5rem;
   overflow: hidden;
 }
 
 .chat-header {
-  padding: 15px 20px;
-  background: var(--header-bg);
-  color: white;
+  padding: 1rem;
+  background-color: var(--header-bg);
+  border-bottom: 1px solid var(--border-color);
   text-align: center;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  h1 { font-size: 1.3rem; margin: 0; }
-  p { font-size: 0.85rem; margin: 0; opacity: 0.9; }
+  
+  h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-color-dark);
+  }
+  
+  p {
+    margin: 0.25rem 0 0;
+    color: #a0aec0;
+    font-size: 0.875rem;
+  }
 }
 
 .chat-messages {
-  flex-grow: 1;
-  padding: 20px 30px;
+  flex: 1;
+  padding: 1.5rem;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 1rem;
 }
 
 .message {
   display: flex;
-  max-width: 75%;
-  &.user-message {
-    align-self: flex-end;
-    .message-bubble { background-color: var(--user-bubble-bg); }
-  }
-  &.bot-message {
-    align-self: flex-start;
-    .message-bubble { background-color: var(--bot-bubble-bg); }
+  max-width: 80%;
+  
+  .message-content {
+    padding: 0.75rem 1rem;
+    border-radius: 1.25rem;
+    
+    p {
+      margin: 0;
+      word-wrap: break-word;
+    }
   }
 }
 
-.message-bubble {
-  padding: 10px 15px;
-  border-radius: 12px;
-  box-shadow: 0 1px 1px rgba(0,0,0,0.05);
-  p { margin: 0; color: var(--text-primary); white-space: pre-wrap; }
+.user-message {
+  align-self: flex-end;
+  
+  .message-content {
+    background-color: var(--user-message-bg);
+    color: var(--text-color-light);
+    border-bottom-right-radius: 0.25rem;
+  }
+}
+
+.bot-message {
+  align-self: flex-start;
+  
+  .message-content {
+    background-color: var(--bot-message-bg);
+    color: var(--text-color-dark);
+    border-bottom-left-radius: 0.25rem;
+  }
+}
+
+.chat-input-area {
+  display: flex;
+  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--header-bg);
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .chat-input {
-  padding: 15px 20px;
-  border-top: 1px solid var(--border-color);
-  background-color: #fff;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-
-  form {
-    display: flex;
-    flex-grow: 1;
-    gap: 15px;
-  }
-
-  input[type="text"] {
-    flex-grow: 1;
-    padding: 12px 18px;
-    border-radius: 25px;
-    border: 1px solid var(--border-color);
+  flex: 1;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 1.5rem;
+  background-color: var(--input-bg);
+  color: var(--text-color-dark);
+  font-size: 1rem;
+  
+  &:focus {
     outline: none;
-    font-size: 1rem;
-    &:focus { border-color: var(--header-bg); }
+    box-shadow: 0 0 0 2px var(--primary-color);
   }
-  
-  // Botão de anexo
-  .attach-btn, .send-btn {
-    flex-shrink: 0;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    border: none;
-    font-size: 1.3rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s;
-  }
-  
-  .attach-btn {
-    background-color: transparent;
-    color: var(--text-secondary);
-    &:hover { background-color: var(--secondary-bg); }
-  }
-  
-  .send-btn {
-    background-color: var(--header-bg);
-    color: white;
-    &:hover { filter: brightness(1.1); }
-    &:disabled { background-color: #ccc; cursor: not-allowed; }
+
+  &:disabled {
+    background-color: #e2e8f0;
+    cursor: not-allowed;
   }
 }
 
-.attachment-preview {
+.attach-button, .send-button {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: #718096;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 5px 10px;
-  background-color: var(--secondary-bg);
-  border-radius: 20px;
-  font-size: 0.9rem;
-  color: var(--text-primary);
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s, color 0.2s;
   
-  button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-secondary);
-    font-size: 1.2rem;
-    line-height: 1;
+  &:hover {
+    background-color: #e2e8f0;
+    color: var(--primary-color);
   }
 }
 
-/* Animação "digitando..." (sem alterações) */
-// ... (código da animação como estava antes)
+.send-button {
+    background-color: var(--primary-color);
+    color: white;
+    &:hover {
+        background-color: #4c51bf;
+    }
+}
+
+
+/* Indicador de "Digitando..." */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  
+  span {
+    height: 8px;
+    width: 8px;
+    margin: 0 2px;
+    background-color: #a0aec0;
+    border-radius: 50%;
+    display: inline-block;
+    animation: bounce 1.4s infinite ease-in-out both;
+  }
+
+  span:nth-child(1) {
+    animation-delay: -0.32s;
+  }
+
+  span:nth-child(2) {
+    animation-delay: -0.16s;
+  }
+}
+
+@keyframes bounce {
+  0%, 80%, 100% { 
+    transform: scale(0);
+  } 40% { 
+    transform: scale(1.0);
+  }
+}

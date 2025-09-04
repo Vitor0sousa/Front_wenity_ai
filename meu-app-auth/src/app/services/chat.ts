@@ -17,6 +17,7 @@ export interface ChatResponse {
 })
 export class ChatService {
   private apiUrl = 'http://localhost:3000/api/chat';
+  private analyzeApiUrl = 'http://localhost:3000/api/analyze';
 
   constructor(private http: HttpClient) { }
 
@@ -24,5 +25,13 @@ export class ChatService {
     const body = { message: userMessage };
     // Nosso AuthInterceptor irá adicionar o token 'x-auth-token' automaticamente.
     return this.http.post<ChatResponse>(this.apiUrl, body);
+  }
+  uploadAndAnalyzePdf(file: File): Observable<ChatResponse> {
+    const formData = new FormData();
+    // O nome 'curriculo' deve ser o mesmo usado no `upload.single()` do backend
+    formData.append('curriculo', file, file.name);
+    
+    // O AuthInterceptor cuidará do token. O HttpClient definirá o Content-Type correto.
+    return this.http.post<ChatResponse>(this.analyzeApiUrl, formData);
   }
 }
