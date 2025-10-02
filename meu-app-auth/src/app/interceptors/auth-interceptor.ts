@@ -1,4 +1,4 @@
-// src/app/interceptors/auth.interceptor.ts
+// src/app/interceptors/auth-interceptor.ts
 import { Injectable } from '@angular/core';
 import {
   HttpRequest,
@@ -20,8 +20,8 @@ export class AuthInterceptor implements HttpInterceptor {
     // Se o token existir, clona a requisição...
     if (token) {
       const clonedRequest = request.clone({
-        // ...e adiciona o cabeçalho 'x-auth-token', como seu backend espera!
-        headers: request.headers.set('x-auth-token', token)
+        // ...e adiciona o cabeçalho 'Authorization' com o formato "Bearer", como nosso backend espera!
+        headers: request.headers.set('Authorization', `Bearer ${token}`)
       });
       // Envia a requisição clonada
       return next.handle(clonedRequest);

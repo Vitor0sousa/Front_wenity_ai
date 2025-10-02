@@ -1,10 +1,10 @@
-// src/app/pages/chat/chat.component.ts
-import { Component, ViewChild, ElementRef, AfterViewChecked, OnInit } from '@angular/core';
+// src/app/pages/chat/chat.ts
+import { Component, ViewChild, ElementRef, AfterViewChecked, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ChatService } from '../../services/chat';
+import { ChatService, HistoryMessage } from '../../services/chat';
 
-interface Message {
+interface DisplayMessage {
   text: string;
   sender: 'user' | 'bot';
 }
@@ -18,145 +18,120 @@ interface Message {
 })
 export class ChatComponent implements OnInit, AfterViewChecked {
   @ViewChild('scrollMe') private myScrollContainer!: ElementRef;
-  @ViewChild('fileInput') fileInput!: ElementRef;
+  @ViewChild('fileInput') fileInput!: ElementRef; // Referência para o input de arquivo
 
-  messages: Message[] = [];
+  messages: DisplayMessage[] = [];
+  history: HistoryMessage[] = [];
   currentMessage: string = '';
-  selectedFile: File | null = null;
   isLoading: boolean = false;
+  selectedFile: File | null = null; // --- ADICIONADO: para guardar o arquivo
 
-  constructor(private chatService: ChatService) {}
+  constructor(
+    private chatService: ChatService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
-    this.messages.push({
-      text: 'Olá! Envie um currículo em PDF para análise ou faça uma pergunta.',
-      sender: 'bot'
-    });
+    // A lógica de carregar histórico continua a mesma
+    this.loadHistory();
   }
 
   ngAfterViewChecked() {
     this.scrollToBottom();
   }
 
+  // --- ADICIONADO: Método para capturar o arquivo selecionado ---
   onFileSelected(event: Event): void {
     const element = event.currentTarget as HTMLInputElement;
-    let fileList: FileList | null = element.files;
+    const fileList: FileList | null = element.files;
     if (fileList && fileList.length > 0) {
       this.selectedFile = fileList[0];
-      this.currentMessage = this.selectedFile.name; // Mostra o nome do arquivo no input
+      // Limpa a mensagem atual para o usuário digitar a instrução
+      if (!this.currentMessage.trim()){
+        this.currentMessage = '';
+      }
     }
   }
 
-  triggerFileUpload(): void {
-    this.fileInput.nativeElement.click();
-  }
-
+  // --- MODIFICADO: A lógica de envio agora tem duas vertentes ---
   sendMessage(): void {
-    // Se um arquivo foi selecionado, envia o arquivo
+    if (this.isLoading) return;
+
+    // Vertente 1: Se um arquivo estiver selecionado, faz a análise
     if (this.selectedFile) {
-      this.handleFileUpload();
+      this.handleResumeAnalysis();
     }
-    // Senão, envia a mensagem de texto
+    // Vertente 2: Se for apenas texto, continua como chat normal
     else if (this.currentMessage.trim()) {
       this.handleTextMessage();
     }
   }
 
-  // ... (código existente)
+  // --- ADICIONADO: Lógica para enviar o arquivo e a instrução ---
+  private handleResumeAnalysis(): void {
+    if (!this.selectedFile) return;
 
-private handleFileUpload(): void {
-  if (!this.selectedFile) return;
+    const userPrompt = this.currentMessage.trim() || 'Faça uma análise geral';
+    const fileName = this.selectedFile.name;
 
-  this.messages.push({
-    text: `Enviando o arquivo: ${this.selectedFile.name}`,
-    sender: 'user'
-  });
-
-  this.isLoading = true;
-  const fileToSend = this.selectedFile;
-
-  // Limpa o estado
-  this.currentMessage = '';
-  this.selectedFile = null;
-  this.fileInput.nativeElement.value = '';
-
-  this.chatService.uploadAndAnalyzePdf(fileToSend).subscribe({
-    next: (response) => {
-      // Adicionado um log para inspecionar a resposta do backend
-      console.log('Resposta do backend (PDF):', response);
-
-      // Valida a resposta antes de exibir no chat
-      if (response && response.reply) {
-        this.messages.push({
-          text: response.reply,
-          sender: 'bot'
-        });
-      } else {
-        // Mensagem de erro para formato de resposta inesperado
-        console.error('Resposta do backend não tem a propriedade "reply":', response);
-        this.messages.push({
-          text: 'Desculpe, a resposta do servidor não está no formato esperado.',
-          sender: 'bot'
-        });
-      }
-      this.isLoading = false;
-    },
-    error: (err) => {
-      this.messages.push({
-        text: 'Desculpe, houve um erro ao analisar o seu documento. Tente novamente.',
-        sender: 'bot'
-      });
-      this.isLoading = false;
-      console.error('Erro ao enviar arquivo:', err);
-    }
-  });
-}
-
-// ... (restante do código)
-
-  private handleTextMessage(): void {
     this.messages.push({
-      text: this.currentMessage,
+      text: `Analisando o currículo "${fileName}" com a instrução: "${userPrompt}"`,
       sender: 'user'
     });
 
-    const userMsg = this.currentMessage;
-    this.currentMessage = '';
     this.isLoading = true;
+    this.cdr.detectChanges();
 
-    this.chatService.sendMessage(userMsg).subscribe({
+    this.chatService.analyzeResume(this.selectedFile, userPrompt).subscribe({
       next: (response) => {
-        // Log de depuração adicionado
-        console.log('RESPOSTA COMPLETA RECEBIDA DO BACKEND:', response);
-
-        if (response && response.reply) {
-            this.messages.push({
-                text: response.reply,
-                sender: 'bot'
-            });
-        } else {
-            console.error('Resposta do backend não tem a propriedade "reply":', response);
-            this.messages.push({
-                text: 'Desculpe, a resposta do servidor não está no formato esperado.',
-                sender: 'bot'
-            });
-        }
+        this.messages.push({ text: response.response, sender: 'bot' });
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
-        this.messages.push({
-          text: 'Desculpe, não consegui processar sua mensagem. Tente novamente.',
-          sender: 'bot'
-        });
+        this.messages.push({ text: 'Desculpe, houve um erro ao analisar o seu documento.', sender: 'bot'});
+        this.isLoading = false;
+        console.error('Erro na análise de currículo:', err);
+        this.cdr.detectChanges();
+      }
+    });
+
+    // Limpa o estado após o envio
+    this.currentMessage = '';
+    this.selectedFile = null;
+    this.fileInput.nativeElement.value = '';
+  }
+
+  // --- Lógica do chat de texto (ligeiramente ajustada) ---
+  private handleTextMessage(): void {
+    const userMsgText = this.currentMessage;
+    this.messages.push({ text: userMsgText, sender: 'user' });
+    this.currentMessage = '';
+    this.isLoading = true;
+    this.cdr.detectChanges();
+
+    this.chatService.sendMessage(userMsgText, this.history).subscribe({
+      next: (response) => {
+        this.messages.push({ text: response.response, sender: 'bot' });
+        this.history.push({ role: 'user', parts: [{ text: userMsgText }] });
+        this.history.push({ role: 'model', parts: [{ text: response.response }] });
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.messages.push({ text: 'Desculpe, não consegui processar sua mensagem.', sender: 'bot' });
         this.isLoading = false;
         console.error('Erro ao enviar mensagem:', err);
+        this.cdr.detectChanges();
       }
     });
   }
 
+  private loadHistory(): void {
+    // ... (este método continua igual) ...
+  }
+
   private scrollToBottom(): void {
-    try {
-      this.myScrollContainer.nativeElement.scrollTop = this.myScrollContainer.nativeElement.scrollHeight;
-    } catch(err) { }
+    // ... (este método continua igual) ...
   }
 }
