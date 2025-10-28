@@ -1,7 +1,7 @@
 // src/app/app.routes.ts
 import { Routes } from '@angular/router';
 import { LoginComponent } from './pages/login/login';
-import { Dashboard } from './pages/dashboard/dashboard';
+import { DashboardComponent } from './pages/dashboard/dashboard';
 import { AuthGuard } from './guards/auth-guard';
 import { RegisterComponent } from './pages/cadastro/cadastro';
 import { ChatComponent } from './pages/chat/chat';
@@ -12,7 +12,7 @@ export const routes: Routes = [
   {path: 'cadastro', component:RegisterComponent},
   {
     path: 'dashboard',
-    component: Dashboard,
+    component: DashboardComponent,
     canActivate: [AuthGuard]
      
   },

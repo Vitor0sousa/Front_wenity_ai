@@ -1,178 +1,29 @@
-<div class="resume-analyzer">
-  <!-- Cabeçalho -->
-  <header>
-    <h1>Olá, seja bem vindo, {{ userName() }}!</h1>
-    <p>Pronto para analisar currículos com o poder da nossa IA?</p>
+<div class="dashboard-container">
+  <header class="dashboard-header">
+    <h1>Bem-vindo ao Dashboard, {{ userName || 'Usuário' }}!</h1>
+    <button (click)="logout()" class="logout-button">Logout</button>
   </header>
 
-  <main class="main-content">
-    <!-- Card Principal -->
-    <div class="analysis-card">
-      <h2 class="card-title">Análise de currículo</h2>
-      <p class="card-subtitle">Arraste e solte o seu arquivo para análise ou anexe o arquivo</p>
+  <section class="actions">
+    <button class="contratar-button" (click)="startHiring()">
+      CONTRATAR
+    </button>
+  </section>
 
-      <!-- Área de Upload -->
-      <div 
-        class="upload-area"
-        [class.dragging]="isDragging()"
-        (dragover)="onDragOver($event)"
-        (dragleave)="onDragLeave($event)"
-        (drop)="onDrop($event)"
-        (click)="fileInput.click()">
-        
-        <input 
-          #fileInput 
-          type="file" 
-          multiple 
-          (change)="onFileSelected($event)" 
-          accept=".pdf,.doc,.docx,.txt" />
-
-        <div class="upload-content">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-          </svg>
-          <p class="upload-text-primary">Arraste e solte seu arquivo aqui</p>
-        </div>
-      </div>
-
-      <button class="attach-button" (click)="fileInput.click()">
-        Anexar Arquivo
-      </button>
-
-      <!-- Configuração de Prompt Customizado -->
-      <div class="prompt-section">
-        <button class="toggle-prompt-btn" (click)="togglePromptInput()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
-          </svg>
-          {{ showPromptInput() ? 'Ocultar' : 'Customizar' }} instruções da IA
-        </button>
-
-        @if (showPromptInput()) {
-          <div class="prompt-input-wrapper">
-            <label for="promptInput">Instruções para a IA:</label>
-            <textarea 
-              id="promptInput"
-              [(ngModel)]="customPrompt"
-              placeholder="Descreva o que você quer que a IA analise..."
-              rows="3"></textarea>
-          </div>
-        }
-      </div>
+  <section class="recent-analyses">
+    <h2>Últimas Análises</h2>
+    <div *ngIf="recentAnalyses().length === 0; else analysesList">
+      <p>Nenhuma análise recente.</p>
     </div>
+    <ng-template #analysesList>
+      <ul class="analysis-list">
+        <li *ngFor="let analysis of recentAnalyses()" class="analysis-item">
+          <div><strong>Vaga:</strong> {{ analysis.jobOpening.title }}</div>
+          <div><strong>Melhor Candidato:</strong> {{ analysis.bestCandidate }}</div>
+          <div><strong>Data:</strong> {{ analysis.analysisDate | date:'short' }}</div>
+          </li>
+      </ul>
+    </ng-template>
+  </section>
 
-    <!-- Lista de Arquivos Carregados -->
-    @if (uploadedFiles().length > 0) {
-      <div class="files-section">
-        <div class="files-header">
-          <h2>Arquivos Carregados ({{ uploadedFiles().length }})</h2>
-          <button class="clear-all-btn" (click)="clearAll()">
-            Limpar Tudo
-          </button>
-        </div>
-
-        <ul>
-          @for (file of uploadedFiles(); track file.name) {
-            <li>
-              <div class="file-info">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/>
-                </svg>
-                <span>{{ file.name }}</span>
-                <span class="file-size">({{ (file.size / 1024 / 1024).toFixed(2) }} MB)</span>
-              </div>
-              <button (click)="removeFile(file.name)" class="remove-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </li>
-          }
-        </ul>
-
-        <!-- Botão de Análise -->
-        <div class="analyze-button-wrapper">
-          <button 
-            (click)="analyzeResumes()"
-            [disabled]="isLoading() || uploadedFiles().length === 0">
-            @if (isLoading()) {
-              <div class="loading-spinner">
-                <div class="spinner"></div>
-                Analisando...
-              </div>
-            } @else {
-              <span>Analisar Currículos</span>
-            }
-          </button>
-        </div>
-      </div>
-    }
-
-    <!-- Resultados das Análises -->
-    @if (hasResults()) {
-      <div class="results-section">
-        <h2>Resultados da Análise</h2>
-
-        @for (result of analysisResults(); track result.fileName) {
-          <div class="result-card" [class]="'status-' + result.status">
-            <div class="result-header">
-              <div class="result-title">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/>
-                </svg>
-                <h3>{{ result.fileName }}</h3>
-              </div>
-
-              @if (result.status === 'pending') {
-                <span class="status-badge pending">Aguardando</span>
-              }
-              @if (result.status === 'analyzing') {
-                <span class="status-badge analyzing">
-                  <div class="mini-spinner"></div>
-                  Analisando
-                </span>
-              }
-              @if (result.status === 'success') {
-                <span class="status-badge success">Concluído</span>
-              }
-              @if (result.status === 'error') {
-                <span class="status-badge error">Erro</span>
-              }
-            </div>
-
-            <div class="result-content">
-              @if (result.status === 'success') {
-                <div class="analysis-text">
-                  {{ result.analysis }}
-                </div>
-                <button class="download-btn" (click)="downloadResult(result)">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
-                  </svg>
-                  Baixar Análise
-                </button>
-              }
-              @if (result.status === 'error') {
-                <div class="error-message">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                    <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
-                  </svg>
-                  {{ result.error || 'Erro ao processar o arquivo.' }}
-                </div>
-              }
-              @if (result.status === 'analyzing' || result.status === 'pending') {
-                <div class="loading-placeholder">
-                  <div class="placeholder-line"></div>
-                  <div class="placeholder-line"></div>
-                  <div class="placeholder-line short"></div>
-                </div>
-              }
-            </div>
-          </div>
-        }
-      </div>
-    }
-  </main>
-</div>
+  </div>

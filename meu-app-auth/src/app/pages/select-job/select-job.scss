@@ -1,0 +1,38 @@
+.job-list {
+  list-style: none;
+  padding: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.job-list li {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: #f4f8ff;
+    border-color: #a0c3ff;
+  }
+
+  &.selected {
+    background-color: #e0eafc;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0,123,255,0.5);
+  }
+
+  h3 {
+    margin: 0 0 5px 0;
+    color: #0056b3;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9em !important; // override app.scss
+    color: #555;
+  }
+}
