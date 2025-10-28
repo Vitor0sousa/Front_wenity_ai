@@ -8,20 +8,31 @@ import { ChatComponent } from './pages/chat/chat';
 
 
 export const routes: Routes = [
-  { path: 'login', component:LoginComponent },
-  {path: 'cadastro', component:RegisterComponent},
+  { 
+    path: 'login', 
+    component: LoginComponent 
+  },
+  { 
+    path: 'cadastro', 
+    component: RegisterComponent 
+  },
   {
     path: 'dashboard',
     component: DashboardComponent,
     canActivate: [AuthGuard]
-     
   },
   {
     path: 'chat',
-    component:ChatComponent,
+    component: ChatComponent,
     canActivate: [AuthGuard]
+  },
+  { 
+    path: '', 
+    redirectTo: '/dashboard', 
+    pathMatch: 'full' 
+  },
+  { 
+    path: '**', 
+    redirectTo: '/login' 
   }
-  // Redireciona para o dashboard se logado, ou para login se não
-  // Rota curinga para páginas não encontradas
-
 ];

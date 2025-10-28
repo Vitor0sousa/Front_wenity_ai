@@ -1,6 +1,5 @@
-// src/app/guards/auth.guard.ts
 import { Injectable } from '@angular/core';
-import { CanActivate, Router } from '@angular/router';
+import { CanActivate, Router, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
 import { AuthService } from '../services/auth';
@@ -10,18 +9,27 @@ import { AuthService } from '../services/auth';
 })
 export class AuthGuard implements CanActivate {
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService, 
+    private router: Router
+  ) {}
 
-  canActivate(): Observable<boolean> {
-    return this.authService.isLoggedIn().pipe(
-      take(1),
-      map(isLoggedIn => {
-        if (!isLoggedIn) {
-          this.router.navigate(['/login']);
-          return false;
-        }
-        return true;
-      })
-    );
+  canActivate(
+    route: ActivatedRouteSnapshot,
+    state: RouterStateSnapshot
+  ): Observable<boolean> | Promise<boolean> | boolean {
+    
+    // Verifica o estado de autenticação
+    if (this.authService.isAuthenticated()) {
+      return true;
+    }
+    
+    // Se não estiver autenticado, redireciona para login
+    // Salva a URL que o usuário tentou acessar
+    this.router.navigate(['/login'], { 
+      queryParams: { returnUrl: state.url } 
+    });
+    
+    return false;
   }
 }
