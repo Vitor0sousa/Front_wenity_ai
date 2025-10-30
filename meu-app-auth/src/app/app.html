@@ -20,7 +20,7 @@
 
   <!-- Mostra o Dashboard se o processo NÃO estiver ativo -->
   <!-- O router-outlet é mantido caso você tenha rotas (como /login) que não devem mostrar o dashboard -->
-  <app-dashboard *ngIf="!isHiringActive()"></app-dashboard>
+ <router-outlet></router-outlet>
 
   <!-- Se você usa rotas para TUDO (incluindo dashboard), você usaria o router-outlet no lugar do <app-dashboard>
   <router-outlet *ngIf="!isHiringActive()"></router-outlet>
