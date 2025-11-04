@@ -1,29 +1,22 @@
-<!-- Container principal para tela cheia -->
 <div class="fullscreen-container">
 
-  <!-- Mostra o Wizard se o processo estiver ativo -->
-  <div *ngIf="isHiringActive()" class="hiring-wizard">
+  <ng-container *ngIf="isHiringActive(); else showRouterContent">
+    <div class="hiring-wizard">
 
-    <!-- Renderiza o componente da etapa atual -->
-    <ng-container [ngSwitch]="currentStep()">
-      <app-select-job *ngSwitchCase="1"></app-select-job>
-      <app-set-requirements *ngSwitchCase="2"></app-set-requirements>
-      <app-upload-resumes *ngSwitchCase="3"></app-upload-resumes>
-      <div *ngSwitchDefault>
-         <p>Etapa inválida. Retornando ao Dashboard...</p>
-         <!-- Opcional: botão para retornar -->
-         <button (click)="hiringProcessService.cancelHiringProcess()">Voltar ao Dashboard</button>
-      </div>
-    </ng-container>
-
-  </div>
-
-  <!-- Mostra o Dashboard se o processo NÃO estiver ativo -->
-  <!-- O router-outlet é mantido caso você tenha rotas (como /login) que não devem mostrar o dashboard -->
- <router-outlet></router-outlet>
-
-  <!-- Se você usa rotas para TUDO (incluindo dashboard), você usaria o router-outlet no lugar do <app-dashboard>
-  <router-outlet *ngIf="!isHiringActive()"></router-outlet>
-  -->
+      <ng-container [ngSwitch]="currentStep()">
+        <app-select-job *ngSwitchCase="1"></app-select-job>
+        <app-set-requirements *ngSwitchCase="2"></app-set-requirements>
+        <app-upload-resumes *ngSwitchCase="3"></app-upload-resumes>
+        <div *ngSwitchDefault>
+           <p>Etapa inválida. Retornando ao Dashboard...</p>
+           <button (click)="hiringProcessService.cancelHiringProcess()" class="btn-secondary">Voltar ao Dashboard</button>
+        </div>
+      </ng-container>
+    </div>
+  </ng-container>
+  
+  <ng-template #showRouterContent>
+    <router-outlet></router-outlet>
+  </ng-template>
 
 </div>

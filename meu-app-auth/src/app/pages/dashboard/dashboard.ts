@@ -32,13 +32,19 @@ export class DashboardComponent implements OnInit {
   }
 
   // **Método para iniciar o processo de contratação**
-  startHiring(): void {
-    this.hiringProcessService.startHiringProcess();
+ startNewHiringProcess(): void {
+    // 1. Inicia um novo processo no serviço
+    this.hiringProcessService.startHiringProcess(); 
+    
+    // 2. Navega para o primeiro passo do funil
+    this.router.navigate(['/select-job']);
   }
+
+  
 
   // Você pode manter ou remover este método se a lógica for centralizada no serviço
   // getRecentAnalyses(): ResumeAnalysis[] {
-  //   // Exemplo de dados mockados - Substitua pela lógica real ou use o sinal
+  //startHiringProcess()   // Exemplo de dados mockados - Substitua pela lógica real ou use o sinal
   //   const mockJob: JobOpening = { id: '1', title: 'Desenvolvedor Angular Pleno' };
   //   return [
   //      { jobOpening: mockJob, bestCandidate: 'Alice Silva', analyzedResumes: [], analysisDate: new Date() },

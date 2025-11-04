@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HiringProcessService } from './services/hiring-process';
-import { DashboardComponent } from './pages/dashboard/dashboard';
+
 
 // Importe os novos componentes
 import { SelectJobComponent } from './pages/select-job/select-job';
@@ -15,7 +15,7 @@ import { UploadResumesComponent } from './components/upload-resumes/upload-resum
   imports: [
     CommonModule,
     RouterOutlet, // Necessário se você ainda usa rotas para login, etc.
-    DashboardComponent,
+    
     // Adicione os imports dos componentes das etapas
     SelectJobComponent,
     SetRequirementsComponent,

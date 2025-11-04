@@ -1,5 +1,7 @@
-import { Injectable, signal, WritableSignal } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Injectable, signal, WritableSignal, inject } from '@angular/core';
+// Importes essenciais para Observable, delay e tap
+import { BehaviorSubject, Observable, of, delay, tap } from 'rxjs'; 
+import { HttpClient } from '@angular/common/http'; 
 // O caminho correto para seus modelos
 import { JobOpening, HiringRequirements, ResumeAnalysis } from '../../app/services/models/hiring.models'; 
 
@@ -23,8 +25,11 @@ export class HiringProcessService {
   // --- Estado do Dashboard ---
   public recentAnalyses: WritableSignal<ResumeAnalysis[]> = signal([]);
 
+  // INJEÇÃO (pronta para uso futuro com HttpClient)
+  // private http = inject(HttpClient); 
+
   constructor() {
-    this.loadRecentAnalyses(); // Carregar dados (ex: localStorage ou API)
+    this.loadRecentAnalyses(); 
   }
 
   // --- Métodos do Processo Passo a Passo ---
@@ -43,11 +48,11 @@ export class HiringProcessService {
 
   nextStep(): void {
     const current = this.currentStep();
+    // A navegação para a análise agora é chamada apenas pelo componente UploadResumes.
+    // Esta lógica de nextStep só deve avançar o contador.
     if (current < 3) {
       this.currentStep.set(current + 1);
-    } else {
-      this.triggerAnalysis();
-    }
+    } 
   }
 
   previousStep(): void {
@@ -83,31 +88,27 @@ export class HiringProcessService {
   // --- Métodos do Dashboard ---
 
   private loadRecentAnalyses(): void {
-    // Exemplo: Buscar do localStorage ou API
     const mockAnalyses: ResumeAnalysis[] = [
-      // Mock data
       {
         jobOpening: { id: 'job1', title: 'Desenvolvedor Frontend Angular' },
-        // LINHA ADICIONADA PARA CORRIGIR O ERRO
         requirements: { experienceLevel: 'Pleno', requiredSkills: ['Angular', 'TypeScript'], niceToHaveSkills: ['NgRx'] },
         bestCandidate: 'Candidato A',
         analyzedResumesCount: 15,
-        analysisDate: new Date(Date.now() - 86400000) // Ontem
+        analysisDate: new Date(Date.now() - 86400000) 
       },
       {
         jobOpening: { id: 'job2', title: 'Engenheiro de Dados Pleno' },
-        // LINHA ADICIONADA PARA CORRIGIR O ERRO
         requirements: { experienceLevel: 'Senior', requiredSkills: ['Python', 'SQL', 'Airflow'], specificRequirements: 'Experiência com cloud (AWS ou GCP)' },
         bestCandidate: 'Candidato B',
         analyzedResumesCount: 25,
-        analysisDate: new Date(Date.now() - 172800000) // Anteontem
+        analysisDate: new Date(Date.now() - 172800000) 
       }
     ];
     this.recentAnalyses.set(mockAnalyses);
   }
 
-  // --- Método para Chamar a IA ---
-  triggerAnalysis(): void {
+  // --- Método para Chamar a IA (AGORA RETORNA UM OBSERVABLE) ---
+  triggerAnalysis(): Observable<ResumeAnalysis | void> { 
     const job = this.selectedJobSubject.value;
     const requirements = this.requirementsSubject.value;
     const resumes = this.resumesSubject.value;
@@ -115,30 +116,32 @@ export class HiringProcessService {
     if (job && requirements && resumes.length > 0) {
       console.log('Disparando análise da IA com:', { job, requirements, resumes });
 
-      // **AQUI VOCÊ CHAMA SEU SERVIÇO DE BACKEND/IA**
-      // Exemplo de como adicionar o resultado (simulado):
-      // Simula uma resposta da IA
-      setTimeout(() => {
-        const newAnalysis: ResumeAnalysis = {
+      // SIMULAÇÃO DA API: Cria um objeto de análise
+      const newAnalysis: ResumeAnalysis = {
           jobOpening: job,
-          requirements: requirements, // <-- LINHA ADICIONADA PARA CORRIGIR O ERRO
-          bestCandidate: `Candidato ${String.fromCharCode(65 + this.recentAnalyses().length)}`, // Simula A, B, C...
+          requirements: requirements, 
+          bestCandidate: `Candidato ${String.fromCharCode(65 + this.recentAnalyses().length)}`, 
           analyzedResumesCount: resumes.length,
           analysisDate: new Date(),
-        };
-        this.recentAnalyses.update(analyses => [newAnalysis, ...analyses].slice(0, 5)); // Mantém os 5 últimos
-        console.log('Análise concluída e adicionada ao dashboard.');
+      };
+      
+      // Simula a chamada da API com um atraso e realiza o reset do estado
+      return of(newAnalysis).pipe(
+          delay(2000), // Simula 2 segundos de latência da API
+          tap(analysis => {
+              this.recentAnalyses.update(analyses => [analysis, ...analyses].slice(0, 5)); 
+              console.log('Análise concluída e adicionada ao dashboard.');
 
-        // Volta para o dashboard após análise
-        this.isHiringProcessActive.set(false);
-        this.currentStep.set(0);
-        this.resetProcess();
-
-      }, 2000); // Simula o tempo de análise
-
+              // Volta para o dashboard após análise e reseta o processo
+              this.isHiringProcessActive.set(false);
+              this.currentStep.set(0);
+              this.resetProcess();
+          })
+      );
     } else {
       console.error('Dados incompletos para iniciar a análise.');
-      alert('Erro: Verifique se selecionou a vaga, definiu requisitos e carregou currículos.');
+      // Retorna um Observable vazio que completa imediatamente
+      return of(undefined);
     }
   }
 
@@ -155,4 +158,3 @@ export class HiringProcessService {
     return this.resumesSubject.value;
   }
 }
-

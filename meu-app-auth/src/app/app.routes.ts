@@ -6,26 +6,59 @@ import { AuthGuard } from './guards/auth-guard';
 import { RegisterComponent } from './pages/cadastro/cadastro';
 import { ChatComponent } from './pages/chat/chat';
 
+// --- 1. IMPORTE OS COMPONENTES DO FUNIL ---
+import { SelectJobComponent } from './pages/select-job/select-job';
+import { SetRequirementsComponent } from './pages/set-requirements/set-requirements';
+import { UploadResumesComponent } from './components/upload-resumes/upload-resumes';
+// (Se você criou um LoginGuard, importe-o também)
+// import { LoginGuard } from './guards/login-guard'; 
 
 export const routes: Routes = [
   { 
     path: 'login', 
-    component: LoginComponent 
+    component: LoginComponent,
+    // canActivate: [LoginGuard] // (Descomente se você criou o LoginGuard)
   },
   { 
     path: 'cadastro', 
-    component: RegisterComponent 
+    component: RegisterComponent,
+    // canActivate: [LoginGuard] // (Descomente se você criou o LoginGuard)
   },
   {
     path: 'dashboard',
     component: DashboardComponent,
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard] 
   },
   {
     path: 'chat',
     component: ChatComponent,
+    canActivate: [AuthGuard] 
+  },
+
+  // --- 2. ADICIONE AS ROTAS DO FUNIL AQUI ---
+  {
+    path: 'select-job',
+    component: SelectJobComponent,
     canActivate: [AuthGuard]
   },
+  {
+    path: 'set-requirements',
+    component: SetRequirementsComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'upload-resumes',
+    component: UploadResumesComponent,
+    canActivate: [AuthGuard]
+  },
+  // (Adicione a rota para o relatório final aqui também)
+  // {
+  //   path: 'analysis-report/:id', // Exemplo
+  //   component: AnalysisReportComponent,
+  //   canActivate: [AuthGuard]
+  // },
+  
+  // --- Rotas Padrão ---
   { 
     path: '', 
     redirectTo: '/dashboard', 
@@ -33,6 +66,6 @@ export const routes: Routes = [
   },
   { 
     path: '**', 
-    redirectTo: '/login' 
+    redirectTo: '/login' // Rota coringa
   }
 ];
