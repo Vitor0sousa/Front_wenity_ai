@@ -10,14 +10,12 @@ import { ChatComponent } from './pages/chat/chat';
 import { SelectJobComponent } from './pages/select-job/select-job';
 import { SetRequirementsComponent } from './pages/set-requirements/set-requirements';
 import { UploadResumesComponent } from './components/upload-resumes/upload-resumes';
-// (Se você criou um LoginGuard, importe-o também)
-// import { LoginGuard } from './guards/login-guard'; 
+
 
 export const routes: Routes = [
   { 
     path: 'login', 
     component: LoginComponent,
-    // canActivate: [LoginGuard] // (Descomente se você criou o LoginGuard)
   },
   { 
     path: 'cadastro', 

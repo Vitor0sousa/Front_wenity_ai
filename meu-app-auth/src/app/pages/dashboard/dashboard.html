@@ -1,29 +1,72 @@
 <div class="dashboard-container">
-  <header class="dashboard-header">
-    <h1>Bem-vindo ao Dashboard, {{ userName || 'Usuário' }}!</h1>
-    <button (click)="logout()" class="logout-button">Logout</button>
+  <header>
+    <h2>Seu Dashboard, {{ userName || 'Usuário' }}</h2>
+    <button (click)="logout()">Sair</button>
   </header>
 
-  <section class="actions">
-    <button class="contratar-button" (click)="startNewHiringProcess()">
-      CONTRATAR
+  <div class="actions">
+    <button class="cta-button" (click)="startHiringProcess()">
+      <span class="icon">+</span>
+      Iniciar Novo Processo de Contratação
     </button>
-  </section>
+  </div>
 
-  <section class="recent-analyses">
-    <h2>Últimas Análises</h2>
-    <div *ngIf="recentAnalyses().length === 0; else analysesList">
-      <p>Nenhuma análise recente.</p>
-    </div>
-    <ng-template #analysesList>
-      <ul class="analysis-list">
-        <li *ngFor="let analysis of recentAnalyses()" class="analysis-item">
-          <div><strong>Vaga:</strong> {{ analysis.jobOpening.title }}</div>
-          <div><strong>Melhor Candidato:</strong> {{ analysis.bestCandidate }}</div>
-          <div><strong>Data:</strong> {{ analysis.analysisDate | date:'short' }}</div>
-          </li>
-      </ul>
-    </ng-template>
-  </section>
+  <div class="recent-analyses">
+    <h3>Análises Recentes</h3>
+    
+    @if (recentAnalyses().length > 0) {
+      
+      <div class="analyses-list">
+        @for (analysis of recentAnalyses(); track analysis.analysisDate) {
+          <div class="analysis-card">
+            
+            <div class="analysis-header">
+              <h4>{{ analysis.jobOpening.title || 'Análise Antiga' }}</h4>
+              <span class="date">{{ analysis.analysisDate | date: 'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            
+            <div class="analysis-details">
+              <span class="badge">{{ analysis.analyzedResumesCount }} currículos analisados</span>
+              
+              @if (analysis.requirements; as reqs) {
+                <h5>Requisitos Definidos:</h5>
+                <ul>
+                  <li><strong>Nível:</strong> {{ reqs.experienceLevel || 'N/A' }}</li>
+
+                  @if (reqs.requiredSkills && reqs.requiredSkills.length > 0) {
+                    <li><strong>Obrigatórias:</strong> {{ reqs.requiredSkills.join(', ') }}</li>
+                  } @else {
+                    <li><strong>Obrigatórias:</strong> Nenhuma</li>
+                  }
+
+                  @if (reqs.niceToHaveSkills && reqs.niceToHaveSkills.length > 0) {
+                    <li><strong>Desejáveis:</strong> {{ reqs.niceToHaveSkills.join(', ') }}</li>
+                  }
+                </ul>
+              } @else {
+                <h5>Requisitos Não Informados</h5>
+              }
+            </div>
+            
+            <div class="analysis-result">
+              <h5>Resultado da Análise da IA:</h5>
+              @if (analysis.analysisText) {
+                <pre>{{ analysis.analysisText }}</pre>
+              } @else {
+                <p><i>O texto desta análise não foi encontrado.</i></p>
+              }
+            </div>
+            
+          </div>
+        }
+      </div>
+
+    } @else {
+      <div class="empty-state">
+        <p>Você ainda não realizou nenhuma análise.</p>
+        <p>Clique em "Iniciar Novo Processo" para começar.</p>
+      </div>
+    }
 
   </div>
+</div>

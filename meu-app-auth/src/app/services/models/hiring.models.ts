@@ -17,5 +17,6 @@ export interface ResumeAnalysis {
   bestCandidate: string; // Pode ser um objeto mais complexo com dados do candidato
   analyzedResumesCount: number;
   analysisDate: Date;
+  analysisText?: string;
 }
 

@@ -1,9 +1,13 @@
 import { Injectable, signal, WritableSignal, inject } from '@angular/core';
-// Importes essenciais para Observable, delay e tap
-import { BehaviorSubject, Observable, of, delay, tap } from 'rxjs'; 
+// Importes essenciais para Observable, BehaviorSubject, e operadores
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs'; 
+import { tap, catchError } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http'; 
 // O caminho correto para seus modelos
 import { JobOpening, HiringRequirements, ResumeAnalysis } from '../../app/services/models/hiring.models'; 
+
+// URL da API (Ajuste se o seu back-end rodar em outra porta)
+const API_URL = 'http://localhost:3000/api';
 
 @Injectable({
   providedIn: 'root'
@@ -25,14 +29,15 @@ export class HiringProcessService {
   // --- Estado do Dashboard ---
   public recentAnalyses: WritableSignal<ResumeAnalysis[]> = signal([]);
 
-  // INJEÇÃO (pronta para uso futuro com HttpClient)
-  // private http = inject(HttpClient); 
+  // INJEÇÃO (agora em uso)
+  private http = inject(HttpClient); 
 
   constructor() {
+    // Carrega o histórico de análises ao iniciar o serviço
     this.loadRecentAnalyses(); 
   }
 
-  // --- Métodos do Processo Passo a Passo ---
+  // --- Métodos do Processo Passo a Passo (Originais) ---
 
   startHiringProcess(): void {
     this.resetProcess();
@@ -48,8 +53,6 @@ export class HiringProcessService {
 
   nextStep(): void {
     const current = this.currentStep();
-    // A navegação para a análise agora é chamada apenas pelo componente UploadResumes.
-    // Esta lógica de nextStep só deve avançar o contador.
     if (current < 3) {
       this.currentStep.set(current + 1);
     } 
@@ -85,67 +88,81 @@ export class HiringProcessService {
     this.resumesSubject.next([]);
   }
 
-  // --- Métodos do Dashboard ---
+  // --- Métodos do Dashboard (MODIFICADOS) ---
 
+  /**
+   * Carrega as análises recentes do back-end.
+   */
   private loadRecentAnalyses(): void {
-    const mockAnalyses: ResumeAnalysis[] = [
-      {
-        jobOpening: { id: 'job1', title: 'Desenvolvedor Frontend Angular' },
-        requirements: { experienceLevel: 'Pleno', requiredSkills: ['Angular', 'TypeScript'], niceToHaveSkills: ['NgRx'] },
-        bestCandidate: 'Candidato A',
-        analyzedResumesCount: 15,
-        analysisDate: new Date(Date.now() - 86400000) 
-      },
-      {
-        jobOpening: { id: 'job2', title: 'Engenheiro de Dados Pleno' },
-        requirements: { experienceLevel: 'Senior', requiredSkills: ['Python', 'SQL', 'Airflow'], specificRequirements: 'Experiência com cloud (AWS ou GCP)' },
-        bestCandidate: 'Candidato B',
-        analyzedResumesCount: 25,
-        analysisDate: new Date(Date.now() - 172800000) 
-      }
-    ];
-    this.recentAnalyses.set(mockAnalyses);
+    // Limpa os mocks e busca no back-end
+    this.recentAnalyses.set([]);
+
+    this.http.get<ResumeAnalysis[]>(`${API_URL}/hiring/history`).pipe(
+      catchError(err => {
+        console.error('Erro ao carregar histórico de análises', err);
+        // Retorna um array vazio em caso de erro para não quebrar a UI
+        return of([]); 
+      })
+    ).subscribe(analyses => {
+      this.recentAnalyses.set(analyses);
+    });
   }
 
-  // --- Método para Chamar a IA (AGORA RETORNA UM OBSERVABLE) ---
-  triggerAnalysis(): Observable<ResumeAnalysis | void> { 
+  // --- Método para Chamar a IA (MODIFICADO) ---
+
+  /**
+   * Dispara a análise da IA enviando os dados para o back-end.
+   * Retorna um Observable que o componente (upload-resumes) pode subscrever.
+   */
+  triggerAnalysis(): Observable<ResumeAnalysis> { 
     const job = this.selectedJobSubject.value;
     const requirements = this.requirementsSubject.value;
     const resumes = this.resumesSubject.value;
 
     if (job && requirements && resumes.length > 0) {
-      console.log('Disparando análise da IA com:', { job, requirements, resumes });
+      console.log('Disparando análise REAL da IA com:', { job, requirements, resumes });
 
-      // SIMULAÇÃO DA API: Cria um objeto de análise
-      const newAnalysis: ResumeAnalysis = {
-          jobOpening: job,
-          requirements: requirements, 
-          bestCandidate: `Candidato ${String.fromCharCode(65 + this.recentAnalyses().length)}`, 
-          analyzedResumesCount: resumes.length,
-          analysisDate: new Date(),
-      };
-      
-      // Simula a chamada da API com um atraso e realiza o reset do estado
-      return of(newAnalysis).pipe(
-          delay(2000), // Simula 2 segundos de latência da API
+      // 1. Precisamos usar FormData para enviar arquivos e JSON juntos
+      const formData = new FormData();
+
+      // 2. Anexa os dados JSON como strings
+      formData.append('jobOpening', JSON.stringify(job));
+      formData.append('requirements', JSON.stringify(requirements));
+
+      // 3. Anexa cada arquivo de currículo
+      resumes.forEach((file) => {
+        // A chave 'resumes' deve ser a mesma usada no back-end: upload.array('resumes')
+        formData.append('resumes', file, file.name);
+      });
+
+      // 4. Chamada HTTP real para a nova rota
+      // Usamos <ResumeAnalysis> para tipar a resposta
+      return this.http.post<ResumeAnalysis>(`${API_URL}/hiring/analyze`, formData).pipe(
           tap(analysis => {
+              // 5. Sucesso: Adiciona a nova análise à lista do dashboard
               this.recentAnalyses.update(analyses => [analysis, ...analyses].slice(0, 5)); 
-              console.log('Análise concluída e adicionada ao dashboard.');
+              console.log('Análise real concluída:', analysis);
 
-              // Volta para o dashboard após análise e reseta o processo
+              // 6. Volta para o dashboard após análise e reseta o processo
               this.isHiringProcessActive.set(false);
               this.currentStep.set(0);
               this.resetProcess();
+          }),
+          catchError((err) => {
+            // 7. Erro: Propaga o erro para o componente (upload-resumes.ts)
+            console.error('Erro na chamada da API de análise', err);
+            // Cria um novo erro para ser pego pelo .subscribe({ error: ... })
+            return throwError(() => new Error(err.error?.message || 'Erro no servidor ao analisar.'));
           })
       );
     } else {
       console.error('Dados incompletos para iniciar a análise.');
-      // Retorna um Observable vazio que completa imediatamente
-      return of(undefined);
+      // Retorna um Observable que emite um erro imediatamente
+      return throwError(() => new Error('Dados incompletos para análise. Por favor, preencha todas as etapas.'));
     }
   }
 
-  // --- Getters ---
+  // --- Getters (Originais) ---
   get currentSelectedJob(): JobOpening | null {
     return this.selectedJobSubject.value;
   }

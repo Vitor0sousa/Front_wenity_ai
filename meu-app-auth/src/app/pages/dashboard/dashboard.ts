@@ -1,25 +1,28 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common'; // Importe CommonModule
-import { AuthService } from '../../services/auth'; // Mantém o AuthService
-import { Router } from '@angular/router'; // Mantém o Router
-import { HiringProcessService  } from '../../services/hiring-process'; // **Importe o novo serviço e tipos**
-import { Signal } from '@angular/core'; // Importe Signal para tipagem
-import { ResumeAnalysis } from '../../services/models/hiring.models'; // Importe ResumeAnalysis
-import { JobOpening } from '../../services/models/hiring.models'; // Importe JobOpening se necessário
+// Importe CommonModule e DatePipe
+import { CommonModule, DatePipe } from '@angular/common'; 
+import { AuthService } from '../../services/auth'; 
+import { Router } from '@angular/router'; 
+import { HiringProcessService } from '../../services/hiring-process'; 
+import { Signal } from '@angular/core'; 
+import { ResumeAnalysis } from '../../services/models/hiring.models'; 
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule], // Adicione CommonModule aqui
+  // Corrigido: Apenas CommonModule e DatePipe são necessários
+  imports: [CommonModule, DatePipe], 
   templateUrl: './dashboard.html',
-  styleUrls: ['./dashboard.scss'] // Corrigido para styleUrls
+  styleUrls: ['./dashboard.scss'] 
 })
 export class DashboardComponent implements OnInit {
   authService = inject(AuthService);
   router = inject(Router);
-  hiringProcessService = inject(HiringProcessService); // **Injete o serviço de contratação**
+  hiringProcessService = inject(HiringProcessService); 
 
   userName: string | null = null;
-  // **Use o sinal do serviço para as análises recentes**
+  
+  // Isto está correto: busca o signal do serviço
   recentAnalyses: Signal<ResumeAnalysis[]> = this.hiringProcessService.recentAnalyses;
 
   ngOnInit(): void {
@@ -31,24 +34,11 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  // **Método para iniciar o processo de contratação**
- startNewHiringProcess(): void {
-    // 1. Inicia um novo processo no serviço
+  /**
+   * CORRIGIDO: Renomeado para 'startHiringProcess' para bater com o HTML.
+   * Removemos a navegação manual. O serviço agora controla a exibição.
+   */
+  startHiringProcess(): void {
     this.hiringProcessService.startHiringProcess(); 
-    
-    // 2. Navega para o primeiro passo do funil
-    this.router.navigate(['/select-job']);
   }
-
-  
-
-  // Você pode manter ou remover este método se a lógica for centralizada no serviço
-  // getRecentAnalyses(): ResumeAnalysis[] {
-  //startHiringProcess()   // Exemplo de dados mockados - Substitua pela lógica real ou use o sinal
-  //   const mockJob: JobOpening = { id: '1', title: 'Desenvolvedor Angular Pleno' };
-  //   return [
-  //      { jobOpening: mockJob, bestCandidate: 'Alice Silva', analyzedResumes: [], analysisDate: new Date() },
-  //      { jobOpening: mockJob, bestCandidate: 'Bob Santos', analyzedResumes: [], analysisDate: new Date(Date.now() - 86400000) } // Ontem
-  //    ];
-  // }
 }
