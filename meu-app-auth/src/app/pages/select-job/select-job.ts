@@ -18,9 +18,12 @@ export class SelectJobComponent implements OnInit {
   ngOnInit(): void {
     // Exemplo de carregamento mockado
     this.jobOpenings = [
-      { id: 'job1', title: 'Desenvolvedor Frontend Angular', description: 'Vaga para desenvolvedor com experiência em Angular 17+.' },
-      { id: 'job2', title: 'Engenheiro de Dados Pleno', description: 'Experiência com pipelines de dados e cloud.' },
-      { id: 'job3', title: 'UX Designer Senior', description: 'Foco em design de interfaces para aplicações web.' }
+      { id: 'job1', title: 'Desenvolvedor Frontend ', description: 'Vaga para desenvolvedor com experiência Desenvolvimento Frontend.' },
+      { id: 'job2', title: 'Engenheiro de Dados', description: 'Experiência com pipelines de dados e cloud.' },
+      { id: 'job3', title: 'UX Designer ', description: 'Foco em design de interfaces para aplicações web.' },
+      {id: 'job4', title: 'Desenvolvedor Backend', description: 'Vaga para desenvolvedor com experiência em Node.js.'},
+      {id: 'job5', title: 'Desenvolvedor fullStack', description: 'Vaga para Desenvolvedor fullStack com experiência em Node.js e Angular.'},
+      {id: 'job6', title: 'Especialista em Ai', description: 'Vaga para especialista em Inteligência Artificial e Machine Learning.'}
     ];
     this.selectedJobId = this.hiringProcessService.currentSelectedJob?.id ?? null;
   }

@@ -1,11 +1,15 @@
-// src/app/services/auth.ts
+// src/app/services/auth.ts (Versão Sênior + Dupla Troca de Senha)
+
 import { Injectable, PLATFORM_ID, Inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, of, BehaviorSubject } from 'rxjs';
+// Importa Observable, of, BehaviorSubject, e throwError
+import { Observable, of, BehaviorSubject, throwError } from 'rxjs'; 
 import { tap, map, catchError } from 'rxjs/operators';
+import { jwtDecode } from 'jwt-decode'; // Importação do jwt-decode
 
+// --- Interfaces de Resposta e Dados ---
 
 interface LoginResponse {
   token: string;
@@ -33,6 +37,18 @@ interface RegisterData {
   password: string;
 }
 
+// --- Interface ADICIONADA (do arquivo júnior, File 882) ---
+export interface ChangePasswordData {
+  token: string;
+  newPassword: string;
+}
+// --------------------------------------------------------
+
+interface RefreshTokenResponse {
+  token: string;
+  refreshToken: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -49,142 +65,44 @@ export class AuthService {
     private router: Router,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
-    // Verifica se está no browser antes de acessar localStorage
     if (isPlatformBrowser(this.platformId)) {
-      this.checkInitialAuth();
+      this.loadToken();
     }
   }
 
-  // Verifica se há um token válido ao iniciar o serviço
-  private checkInitialAuth(): void {
+  private loadToken(): void {
     const token = this.getToken();
-    if (token) {
-      // Verifica se o token ainda é válido
-      if (!this.isTokenExpired(token)) {
-        this.isAuthenticatedSubject.next(true);
-        this.scheduleTokenRefresh();
-      } else {
-        // Token expirado, tenta fazer refresh
-        this.tryRefreshToken();
+    if (token && !this.isTokenExpired(token)) {
+      this.isAuthenticatedSubject.next(true);
+      this.scheduleTokenRefresh();
+    } else {
+      this.isAuthenticatedSubject.next(false);
+      // Se o token expirou, tenta usar o refresh token
+      if (token) {
+        this.refreshToken().subscribe();
       }
     }
   }
 
-  // Verifica se o token está expirado
-  private isTokenExpired(token: string): boolean {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const exp = payload.exp * 1000; // converte para milliseconds
-      return Date.now() >= exp;
-    } catch (error) {
-      return true;
-    }
-  }
-
-  // Tenta renovar o token usando refresh token
-  private tryRefreshToken(): void {
-    const refreshToken = this.getRefreshToken();
-    if (refreshToken) {
-      this.http.post<LoginResponse>(`${this.apiUrl}/refresh-token`, { refreshToken })
-        .subscribe({
-          next: (response) => {
-            this.setToken(response.token);
-            if (response.refreshToken) {
-              this.setRefreshToken(response.refreshToken);
-            }
-            this.isAuthenticatedSubject.next(true);
-            this.scheduleTokenRefresh();
-          },
-          error: () => {
-            this.logout();
-          }
-        });
-    } else {
-      this.logout();
-    }
-  }
-
-  // Agenda renovação automática do token
-  private scheduleTokenRefresh(): void {
-    const token = this.getToken();
-    if (!token) return;
-
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const exp = payload.exp * 1000;
-      const now = Date.now();
-      
-      // Renova 5 minutos antes de expirar
-      const timeout = exp - now - (5 * 60 * 1000);
-      
-      if (timeout > 0) {
-        if (this.tokenRefreshTimer) {
-          clearTimeout(this.tokenRefreshTimer);
-        }
-        
-        this.tokenRefreshTimer = setTimeout(() => {
-          this.tryRefreshToken();
-        }, timeout);
-      }
-    } catch (error) {
-      console.error('Erro ao agendar refresh do token:', error);
-    }
-  }
-
-  login(credentials: Credentials): Observable<LoginResponse>;
-  login(email: string, password: string): Observable<LoginResponse>;
-  login(emailOrCredentials: string | Credentials, password?: string): Observable<LoginResponse> {
-    let loginData: Credentials;
-    
-    if (typeof emailOrCredentials === 'string' && password) {
-      loginData = { email: emailOrCredentials, password };
-    } else if (typeof emailOrCredentials === 'object') {
-      loginData = emailOrCredentials;
-    } else {
-      throw new Error('Parâmetros inválidos para login');
-    }
-
-    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, loginData)
-      .pipe(
-        tap(response => {
+  login(credentials: Credentials): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials).pipe(
+      tap((response) => {
+        if (response.token) {
           this.setToken(response.token);
-          
-          // Salva refresh token se disponível
           if (response.refreshToken) {
             this.setRefreshToken(response.refreshToken);
           }
-          
-          if (response.user?.name) {
-            localStorage.setItem('userName', response.user.name);
+          if (response.user && response.user.name) {
+            this.setUserName(response.user.name);
           }
-          
           this.isAuthenticatedSubject.next(true);
           this.scheduleTokenRefresh();
-        }),
-        catchError(error => {
-          this.isAuthenticatedSubject.next(false);
-          throw error;
-        })
-      );
+        }
+      })
+    );
   }
 
-  register(apiData: RegisterData): Observable<RegisterResponse>;
-  register(name: string, email: string, password: string): Observable<RegisterResponse>;
-  register(
-    nameOrData: string | RegisterData, 
-    email?: string, 
-    password?: string
-  ): Observable<RegisterResponse> {
-    let registerData: RegisterData;
-    
-    if (typeof nameOrData === 'string' && email && password) {
-      registerData = { name: nameOrData, email, password };
-    } else if (typeof nameOrData === 'object') {
-      registerData = nameOrData;
-    } else {
-      throw new Error('Parâmetros inválidos para registro');
-    }
-    
+  register(registerData: RegisterData): Observable<RegisterResponse> {
     return this.http.post<RegisterResponse>(`${this.apiUrl}/register`, registerData);
   }
 
@@ -225,6 +143,16 @@ export class AuthService {
   }
 
   logout(): void {
+    const refreshToken = this.getRefreshToken();
+    
+    // Tenta informar o backend sobre o logout
+    if (refreshToken) {
+      this.http.post(`${this.apiUrl}/logout`, { refreshToken }).subscribe({
+        next: () => console.log('Refresh token revogado no backend.'),
+        error: () => console.warn('Não foi possível revogar o refresh token no backend.')
+      });
+    }
+
     if (this.tokenRefreshTimer) {
       clearTimeout(this.tokenRefreshTimer);
     }
@@ -236,13 +164,105 @@ export class AuthService {
     }
     
     this.isAuthenticatedSubject.next(false);
-    this.router.navigate(['/login']);
+    this.router.navigate(['/login']); // Redireciona para o login
   }
 
-  getUserName(): string {
+  private setUserName(name: string): void {
     if (isPlatformBrowser(this.platformId)) {
-      return localStorage.getItem('userName') || 'Usuário';
+      localStorage.setItem('userName', name);
     }
-    return 'Usuário';
   }
+
+  getUserName(): string | null {
+    if (isPlatformBrowser(this.platformId)) {
+      return localStorage.getItem('userName');
+    }
+    return null;
+  }
+
+  private isTokenExpired(token: string): boolean {
+    try {
+      const decoded: { exp: number } = jwtDecode(token);
+      const expiry = decoded.exp * 1000;
+      return expiry < Date.now();
+    } catch (e) {
+      return true;
+    }
+  }
+
+  private scheduleTokenRefresh(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    if (this.tokenRefreshTimer) {
+      clearTimeout(this.tokenRefreshTimer);
+    }
+
+    const token = this.getToken();
+    if (!token) return;
+
+    try {
+      const decoded: { exp: number } = jwtDecode(token);
+      const expiry = decoded.exp * 1000;
+      const now = Date.now();
+      
+      // Agenda a renovação 1 minuto antes de expirar
+      const delay = expiry - now - (60 * 1000); 
+
+      if (delay > 0) {
+        this.tokenRefreshTimer = setTimeout(() => {
+          this.refreshToken().subscribe();
+        }, delay);
+      } else {
+        // Se já está perto de expirar (ou expirou), tenta renovar agora
+        this.refreshToken().subscribe();
+      }
+    } catch (e) {
+      console.error('Erro ao decodificar token para agendamento', e);
+    }
+  }
+
+  refreshToken(): Observable<RefreshTokenResponse> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+      this.logout(); // Desloga se não tiver refresh token
+      return throwError(() => new Error('Refresh token não encontrado.'));
+    }
+
+    return this.http.post<RefreshTokenResponse>(`${this.apiUrl}/refresh-token`, { refreshToken }).pipe(
+      tap((response) => {
+        this.setToken(response.token);
+        if (response.refreshToken) {
+          this.setRefreshToken(response.refreshToken);
+        }
+        this.isAuthenticatedSubject.next(true);
+        this.scheduleTokenRefresh(); // Reagenda a próxima renovação
+      }),
+      catchError((err) => {
+        console.error('Erro ao renovar token', err);
+        this.logout(); // Desloga se a renovação falhar
+        return throwError(() => err);
+      })
+    );
+  }
+
+  // ===========================================
+  // --- MÉTODOS DE TROCA DE SENHA ADICIONADOS ---
+  // ===========================================
+
+  /**
+   * Método 1: (Do dev júnior)
+   * Usado por componentes que enviam o objeto 'ChangePasswordData'.
+   */
+  changePassword(data: ChangePasswordData): Observable<any> {
+    return this.http.post(`${this.apiUrl}/trocar-senha`, data);
+  }
+
+  /**
+   * Método 2: (Do dev sênior, fornecido por você)
+   * Usado para resetar a senha (provavelmente via link de e-mail).
+   */
+  resetPassword(token: string, newPassword: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/trocar-senha`, { token, newPassword });
+  }
+
 }
